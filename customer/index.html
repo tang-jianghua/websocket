@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<title>websocket客户端</title>
+		<link rel="stylesheet" href="css/bootstrap.min.css">
+		<meta charset="utf-8">
+		<meta name="author" content="tangjianghua">
+	</head>
+	<body>
+		<div class="page-header"></div>
+
+		<div class="container">
+			<div id="div_msgzone" class="panel panel-default">
+				<div class="panel-heading" style="    height: 55px;">
+					<input type="text" class="form-control" style="float:left;width: 200px !important;margin-left:10px;margin-right:10px;" id="inp_url" value="ws://localhost:8080/demo"
+					 placeholder="连接的地址">
+					 <input type="text" class="form-control" style="float:left;width: 100px !important;margin-left:10px;margin-right:10px;" id="userId" value="1"
+					  placeholder="用户id">
+					 <input type="text" class="form-control" style="float:left;width: 100px !important;margin-left:10px;margin-right:10px;" id="userName" value="李雷"
+					  placeholder="用户昵称">
+					<button type="button" id="btn_conn" class="btn btn-primary" style="float:left;margin-left:10px;margin-right:10px;"
+					 onclick="fun_initWebSocket();">连接</button>
+					<button type="button" id="btn_close" class="btn btn-danger" style="float:left;" onclick="fun_close();">断开</button>
+				</div>
+				<div id="div_msg" class="panel-body" style="height: 400px;">
+				</div>
+			</div>
+
+			<div class="zone_send">
+				<textarea id="inp_send" class="form-control" style="height:100px;" placeholder="发送的内容"></textarea>
+				<br>
+				<input type="text" class="form-control" style="float:left;width: 100px !important;margin-right:10px;" id="toUserId" value="2"
+				 placeholder="接收方id">
+				<button type="button" id="btn_send" class="btn btn-info" onclick="fun_sendto();">发送（ctrl+回车）</button>
+			</div>
+		</div>
+
+	</body>
+	<script src="https://code.jquery.com/jquery-3.4.1.js"></script>
+	<script src="js/bootstrap.min.js"></script>
+	<script>
+		var ws;
+		var div_msg = $("#div_msg");
+		function fun_initWebSocket(){
+			var url = $("#inp_url").val();
+			// 初始化一个 WebSocket 对象
+			ws = new WebSocket(url);
+			var loginData = {
+				userId: $("#userId").val(),
+				userName: $("#userName").val(),
+				action: "login"
+			}
+			// 建立 web socket 连接成功触发事件
+			ws.onopen = function() {
+			  // 使用 send() 方法发送数据
+			  //登录
+			  ws.send(JSON.stringify(loginData));
+			};
+			
+			// 接收服务端数据时触发事件
+			ws.onmessage = function(evt) {
+			  var received_msg = evt.data;
+			  console.log(received_msg);
+			  received_msg = JSON.parse(received_msg);
+			  //将接收到的信息追加到聊天窗口
+			  div_msg.append("<div style='margin-bottom:10px;position:relative;text-align: right;'><div >"+
+			  received_msg.fromUserName+
+			  "</div>"+
+			  received_msg.message+
+			  "</div>"
+			  );
+			};
+			
+			// 断开 web socket 连接成功触发事件
+			ws.onclose = function() {
+			  alert('连接已关闭...');
+			};
+		}
+		
+		//发送信息
+		function fun_sendto(){
+			var inp_send = $("#inp_send").val();
+			var data = {
+				userId: $("#userId").val(),
+				userName: $("#userName").val(),
+				toUserId: $("#toUserId").val(),
+				action: "send",
+				message: inp_send
+			}
+			//追加聊天窗口
+			div_msg.append("<div style='margin-bottom:10px;position:relative;text-align: left;'><div  style='color: green'>"+
+			data.userName+
+			"</div>"+
+			data.message+
+			"</div>"
+			);
+			if(ws.readyState == ws.OPEN){
+				ws.send(JSON.stringify(data));
+			}
+		}
+		
+		//断开连接
+		function fun_close(){
+			ws.close();
+		}
+		
+	</script>
+</html>
